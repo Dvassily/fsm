@@ -1,0 +1,55 @@
+from enum import Enum
+from queue import Queue
+import threading
+import time
+
+class State(Enum):
+    OFF = 0
+    ON = 1
+
+class Event(Enum):
+    SWITCH = 0
+
+class StateMachine:
+    def __init__(self):
+        self.currentState = State.OFF
+        self.isRunning = False
+        self.internalQueue = Queue()
+        self.externalQueue = Queue()
+        self.actions = {}
+        
+    def mainLoop(self):
+        while self.isRunning:
+            while not self.externalQueue.empty():
+                event = self.externalQueue.get()
+                if (self.currentState == State.OFF):
+                    if (event == Event.SWITCH):
+                        self.currentState = State.ON
+                        self.execute('tic')
+                        
+                elif (self.currentState == State.ON):
+                    if (event == Event.SWITCH):
+                        self.currentState = State.OFF
+                        self.execute('tac')
+
+    def submitEvent(self, eventStr):
+        try:
+            self.externalQueue.put(Event[eventStr])
+        except KeyError:
+            print('Error : Unknown event ' + event)
+
+    def connect(self, actionStr, handler):
+        self.actions[actionStr] = handler;
+    
+    def start(self):
+        self.isRunning = True
+        threading.Thread(target=self.mainLoop).start()
+
+    def execute(self, actionStr):
+        try:
+            self.actions[actionStr]()
+        except KeyError:
+            print('Action ' + actionStr + ' not handled')
+
+    def stop(self):
+        self.isRunning = False

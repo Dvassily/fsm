@@ -1,0 +1,12 @@
+<scxml initial="intact">
+  <state id="OFF">
+    <transition event="SWITCH" target="ON">
+      <send event="tic" />
+    </transition>
+  </state>
+  <state id="ON">
+    <transition event="SWITCH" target="OFF">
+      <send event="tac" />
+    </transition>
+  </state>
+</scxml>
