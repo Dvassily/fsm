@@ -72,22 +72,27 @@ class FSMGenerator:
             self.generate_transition(node.findall('transition'))
             self.append_to_file('\n', 2);
             nbState += 1
-        
-    def generate_class(self):
+
+    def generate_constructor(self):
         initial = self.root.xpath('//scxml/state')[0].get('id')
         
         self.append_to_file('class ' + self.name + '(StateMachine):\n')
         self.append_to_file('def __init__(self):\n', 1)
         self.append_to_file('super(' + self.name + ', self).__init__(State, Event)\n', 2)
-        self.append_to_file('self.currentState = State.' + initial + '\n', 2)
-        self.append_to_file('self.finalStates = [ ', 2)
+        self.append_to_file('self.enterState(State.' + initial + ')\n', 2)
 
         finalNodes = self.root.xpath('//scxml/final')
-        self.append_to_file('State.' + finalNodes[0].get('id'))
-        for final in finalNodes[1:]:
-            self.append_to_file(', State.' + final.get('id'))
-        self.append_to_file(' ]\n\n')
-        
+        if finalNodes:
+            self.append_to_file('self.finalStates = [ ', 2)
+            self.append_to_file('State.' + finalNodes[0].get('id'))
+            for final in finalNodes[1:]:
+                self.append_to_file(', State.' + final.get('id'))
+            self.append_to_file(' ]\n\n')
+            
+        self.append_to_file('\n', 1)
+    
+    def generate_class(self):
+        self.generate_constructor()
         self.generate_microstep()
         
     def generate(self):
@@ -103,5 +108,6 @@ class FSMGenerator:
 if __name__ == '__main__':
     #gen = FSMGenerator('../switch.xml', 'output.py', 'Switch')
     #gen = FSMGenerator('../raisetest.scxml', 'rsoutput.py', 'RaiseTest')
-    gen = FSMGenerator('../slide.scxml', 'slideoutput.py', 'Slide')
+    #gen = FSMGenerator('../slide.scxml', 'slideoutput.py', 'Slide')
+    gen = FSMGenerator('../chrono.scxml', 'chronooutput.py', 'Chrono')
     gen.generate()

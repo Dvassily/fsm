@@ -1,0 +1,26 @@
+<scxml initial="intact">
+  <state id="INIT">
+    <transition event="startStop" target="RUNNING">
+      <send event="start" />
+    </transition>
+  </state>
+  <state id="RUNNING">
+    <transition event="pauseResume" target="PAUSED">
+      <send event="pause" />
+    </transition>
+    <transition event="startStop" target="STOPPED">
+      <send event="stop" />
+    </transition>
+  </state>
+  <state id="PAUSED">
+    <transition event="pauseResume" target="RUNNING">
+      <send event="resume" />
+    </transition>
+    <transition event="startStop" target="STOPPED" />
+  </state>
+  <state id="STOPPED">
+    <transition event="startStop" target="INIT">
+      <send event="reset" />
+    </transition>
+  </state>
+</scxml>
