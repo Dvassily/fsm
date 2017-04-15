@@ -12,12 +12,28 @@ class StateMachine:
         self.actions = {}
         self.states = states;
         self.events = events;
+        self.eventThread = threading.Thread(target=self.mainLoop)
+        self.finalStates = []
         
     def mainLoop(self):
         while self.isRunning:
-            while not self.externalQueue.empty():
-                event = self.externalQueue.get()
-                self.microstep(event)
+            while not self.internalQueue.empty():
+                self.handleEvent(self.internalQueue.get())
+            
+            event = self.externalQueue.get()
+            if event is not None:
+                self.handleEvent(event)
+
+    def handleEvent(self, event):
+        print('Fire transition ' + event.name)
+        self.microstep(event)
+        
+        if self.currentState in self.finalStates:
+            self.stop()
+
+    def enterState(self, state):
+        self.currentState = state
+        print('Enter state ' + state.name)
 
     def submitEvent(self, eventStr):
         try:
@@ -27,10 +43,10 @@ class StateMachine:
 
     def connect(self, actionStr, handler):
         self.actions[actionStr] = handler;
-    
+
     def start(self):
         self.isRunning = True
-        threading.Thread(target=self.mainLoop).start()
+        self.eventThread.start()
 
     def execute(self, actionStr):
         try:
@@ -40,3 +56,4 @@ class StateMachine:
 
     def stop(self):
         self.isRunning = False
+        self.externalQueue.put(None)

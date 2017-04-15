@@ -20,7 +20,7 @@ class FSMGenerator:
         self.append_to_file('import threading, time\n\n')
 
     def generate_states(self):
-        states = self.root.xpath('//scxml/state')
+        states = self.root.xpath("//scxml/final|state")
 
         self.append_to_file('class State(Enum):\n')
 
@@ -53,10 +53,12 @@ class FSMGenerator:
         for transition in transitions:
             transitionCondition = ('el' if (nbTransition > 0) else '') + 'if (event == Event.' + transition.get('event') + '):\n'
             self.append_to_file(transitionCondition, 3)
-            for send in transition.findall('send'):
-                self.append_to_file('self.execute(\'' + send.get('event') + '\')\n', 4)                
+            for sendNode in transition.findall('send'):
+                self.append_to_file('self.execute(\'' + sendNode.get('event') + '\')\n', 4)
+            for raiseNode in transition.findall('raise'):
+                self.append_to_file('self.internalQueue.put(Event[\'' + raiseNode.get('event') + '\'])\n', 4)                
 
-            self.append_to_file('self.currentState = State.' + transition.get('target') + '\n', 4)
+            self.append_to_file('self.enterState(State.' + transition.get('target') + ')\n', 4)
         
 
     def generate_microstep(self):
@@ -76,9 +78,16 @@ class FSMGenerator:
         
         self.append_to_file('class ' + self.name + '(StateMachine):\n')
         self.append_to_file('def __init__(self):\n', 1)
-        self.append_to_file('StateMachine.__init__(self, State, Event)\n', 2)
-        self.append_to_file('self.currentState = State.' + initial + '\n\n', 2)
+        self.append_to_file('super(' + self.name + ', self).__init__(State, Event)\n', 2)
+        self.append_to_file('self.currentState = State.' + initial + '\n', 2)
+        self.append_to_file('self.finalStates = [ ', 2)
 
+        finalNodes = self.root.xpath('//scxml/final')
+        self.append_to_file('State.' + finalNodes[0].get('id'))
+        for final in finalNodes[1:]:
+            self.append_to_file(', State.' + final.get('id'))
+        self.append_to_file(' ]\n\n')
+        
         self.generate_microstep()
         
     def generate(self):
@@ -92,5 +101,7 @@ class FSMGenerator:
         self.outputFile.close()
         
 if __name__ == '__main__':
-    gen = FSMGenerator('../switch.xml', 'output.py', 'Switch')
+    #gen = FSMGenerator('../switch.xml', 'output.py', 'Switch')
+    #gen = FSMGenerator('../raisetest.scxml', 'rsoutput.py', 'RaiseTest')
+    gen = FSMGenerator('../slide.scxml', 'slideoutput.py', 'Slide')
     gen.generate()
